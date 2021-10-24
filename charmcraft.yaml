@@ -1,0 +1,12 @@
+type: bundle
+charmhub:
+  # these fields are set to the default value to illustrate field usage
+  # likely not required in most cases
+  api-url: https://api.charmhub.io
+  storage-url: https://storage.snapcraftcontent.com
+parts:
+  bundle:
+    prime: ["README.md"]
+bases:
+  - name: ubuntu
+    channel: "20.04"
