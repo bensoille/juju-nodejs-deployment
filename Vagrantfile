@@ -21,6 +21,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.provision "shell",
     path: "setup.sh"    
 
+  config.vm.provision "file", source: "nodejs-app", destination: "$HOME/nodejs-app"
   # Deploy services
   config.vm.provision "shell", privileged: false,
     path: "deploy.sh"       

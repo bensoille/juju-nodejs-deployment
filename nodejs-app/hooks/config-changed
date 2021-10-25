@@ -1,0 +1,58 @@
+#!/bin/bash
+# config-changed occurs everytime a new configuration value is updated (juju set)
+
+set -eux # -x for verbose logging to juju debug-log
+
+umask 002
+
+install_root=`config-get install_root`
+app_name=`config-get app_name`
+app_dir="$install_root/$app_name"
+app_user=`config-get app_user`
+app_branch=`config-get app_branch`
+app_port=`config-get app_port`
+#app_node_env=`config-get app_node_env`
+#cron_schedule=`config-get polling_schedule`
+cd $app_dir
+
+update_app() {
+
+    is_branch=false
+
+    # Always fetch latest if branch requested
+    if git checkout origin/${app_branch}; then # is a local branch
+	git fetch origin && git checkout origin/${app_branch}
+        is_branch=true
+    else # tag/commit ref?
+	if ! git checkout ${app_branch}; then # commit does not exist locally
+	    git fetch origin
+	    if ! git checkout origin/${app_branch}; then # not a new remote branch, is a commit ref/tag
+		git checkout $app_branch
+            else
+                is_branch=true
+            fi
+	fi
+    fi
+}
+
+configure_app() {
+  juju-log "Configuring ${app_name}..."
+#   mongo_host="`juju run --unit mongodb/0 "unit-get private-address"`"
+  config_file_path=${app_dir}/src/config/config.js
+  if [ -f $config_file_path ]; then
+    juju-log "Writing $app_name config file $config_file_path"
+    sed -i "s/name.*/name\": \"${app_name}\"/" $config_file_path
+#     sed -i "s/mongo_host.*/mongo_host\": \"${mongo_host}\"/" $config_file_path
+  else
+    juju-log "$app_name : NO config file at $config_file_path"
+  fi
+}
+
+update_app
+configure_app
+
+npm update && npm install
+
+chown -Rf ${app_user}.${app_user} ${app_dir}
+
+npm run restart

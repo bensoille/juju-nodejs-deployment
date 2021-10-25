@@ -1,0 +1,55 @@
+#!/bin/bash
+# Here do anything needed to install the service
+# i.e. apt-get install -y foo  or  bzr branch http://myserver/mycode /srv/webroot
+# Make sure this hook exits cleanly and is idempotent, common problems here are
+# failing to account for a debconf question on a dependency, or trying to pull
+# from github without installing git first.
+
+set -eux # -x for verbose logging to juju debug-log
+
+umask 002
+
+install_root=`config-get install_root`
+app_name=`config-get app_name`
+app_dir="$install_root/$app_name"
+app_user=`config-get app_user`
+app_scm=`config-get app_scm`
+app_url=`config-get app_url`
+app_branch=`config-get app_branch`
+app_port=`config-get app_port`
+
+apt-get -y install -qq git curl
+
+install_node() {
+  juju-log "Installing Node.js..."
+  curl -sL https://deb.nodesource.com/setup_14.x | bash -
+  apt-get -y install -qq nodejs
+}
+[[ -x /usr/bin/node ]] || install_node
+
+install_app() {
+  juju-log "Installing ${app_name}..."
+  git clone ${app_url} ${app_dir} -b ${app_branch}
+  chown -Rf ${app_user}.${app_user} ${app_dir}
+
+  if [ -f ${app_dir}/package.json ]; then
+    cd ${app_dir} && npm install
+  fi
+
+  cat > /etc/init/${app_name}.conf <<EOS
+description "${app_name} Node.js server"  
+
+#env PORT=${app_port}
+
+start on runlevel [2345]
+stop on runlevel [016]
+respawn
+
+setuid ${app_user}
+chdir ${app_dir}
+exec npm start
+EOS
+}
+[[ -d ${app_dir} ]] || install_app
+
+juju-log "Delaying app startup until mongodb join"

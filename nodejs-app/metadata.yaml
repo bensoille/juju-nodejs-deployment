@@ -1,0 +1,14 @@
+name: node-app
+summary: Deploy a Node.js application that simulates containers lifecycle
+maintainer: Ben Soille <ben.soille@gmail.com>
+description: |
+  Deploy nodejs service that simulates licecycle of containers ; uses mongodb
+tags:
+  - applications
+subordinate: false
+provides:
+  website:
+    interface: http
+requires:
+  database:
+    interface: mongodb
