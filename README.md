@@ -55,8 +55,9 @@ Just log in to you VM
 vagrant ssh
 ```
 
- and `curl` your service, using IP address found at the end of provisioning.
- ```shell
+Then `curl` your service, using IP address found at the end of provisioning.  
+See [this repository](https://github.com/bensoille/containers-lifecycle-simulate) to learn more about deployed REST service.  
+```shell
 # Eventually display services details and find IP address
 juju status --relations
 
